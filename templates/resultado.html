@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block titulo %}Aether · Solución{% endblock %}
+{% block contenido %}
+<section class="cabecera-resultado reveal">
+  <span class="insignia-cat">{{ iconos[solucion.categoria] }} {{ solucion.categoria }}</span>
+  <h1 class="titulo-pagina">Solución <em>paso a paso</em></h1>
+  <p class="meta">{{ fecha }}</p>
+</section>
+
+<details class="enunciado glass reveal">
+  <summary>Ver enunciado</summary>
+  <p>{{ solucion.enunciado }}</p>
+  {% if solucion.imagen %}
+  <img src="{{ url_for('imagen_problema') }}" alt="Imagen del problema adjunta">
+  {% endif %}
+</details>
+
+<div class="acciones">
+  <a href="{{ url_for('descargar_pdf') }}" class="btn-oro ripple">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 V15"/><path d="M7 11 L12 16 L17 11"/><path d="M5 20 H19"/></svg>
+    <span>Descargar reporte PDF</span>
+  </a>
+  <a href="{{ url_for('index') }}" class="btn-cristal ripple">Nuevo problema</a>
+</div>
+
+{% for s in solucion.secciones %}
+<article class="seccion-card glass reveal {{ 'resultado-final' if loop.last and loop.length > 1 else '' }}" data-idx="{{ loop.index0 }}">
+  <header>
+    <span class="numero">{{ s.icono }}</span>
+    <div>
+      <small>Sección {{ loop.index }}</small>
+      <h2>{{ s.titulo }}</h2>
+    </div>
+  </header>
+  <div class="prosa" data-cuerpo></div>
+</article>
+{% endfor %}
+
+<script id="datosSolucion" type="application/json">{{ solucion.secciones | tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var datos = JSON.parse(document.getElementById("datosSolucion").textContent);
+  document.querySelectorAll(".seccion-card").forEach(function (tarjeta) {
+    var indice = parseInt(tarjeta.getAttribute("data-idx"), 10);
+    window.AetherRender.montar(tarjeta.querySelector("[data-cuerpo]"), datos[indice].cuerpo);
+  });
+})();
+</script>
+{% endblock %}

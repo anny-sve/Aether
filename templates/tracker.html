@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block titulo %}Aether · Laboratorio de visión{% endblock %}
+{% block contenido %}
+<section class="hero hero-chico reveal">
+  <p class="sobretitulo">Módulo B</p>
+  <h1 class="titulo-pagina">Tracker-Vision <em>&amp; Error Auditor</em></h1>
+  <p class="subtitulo-hero">Graba el experimento, deja que OpenCV siga el objeto y audita por qué la realidad no es la teoría.</p>
+  <canvas class="onda-hero" data-onda aria-hidden="true"></canvas>
+</section>
+
+<section class="panel glass reveal">
+  <div class="panel-cabeza">
+    <span class="insignia">1</span>
+    <div>
+      <h2>Captura del experimento</h2>
+      <p>Cámara fija, objeto de color vivo y fondo liso dan los mejores resultados.</p>
+    </div>
+  </div>
+
+  <form id="formTracker" novalidate>
+    <div id="errorTracker" class="alerta" role="alert" hidden></div>
+
+    <div class="botones-captura">
+      <label class="btn-cristal ripple" for="videoCamara">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        <span>Grabar con la cámara</span>
+      </label>
+      <label class="btn-cristal ripple" for="videoArchivo">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16 V5"/><path d="M7 9 L12 4 L17 9"/><path d="M4 15 V19 H20 V15"/></svg>
+        <span>Subir un video</span>
+      </label>
+      <input type="file" id="videoCamara" accept="video/*" capture="environment" hidden>
+      <input type="file" id="videoArchivo" accept="video/*" hidden>
+    </div>
+
+    <div id="previaCaja" class="previa-caja" hidden>
+      <video id="vistaPrevia" playsinline muted controls></video>
+      <p id="nombreArchivo"></p>
+    </div>
+
+    <fieldset class="grupo">
+      <legend>Experimento</legend>
+      <div class="chips">
+        {% set iconos_exp = {'caida': '⬇️', 'pendulo': '🕰️', 'parabolico': '🏹'} %}
+        {% for clave, nombre in experimentos.items() %}
+        <label class="chip">
+          <input type="radio" name="experimento" value="{{ clave }}" {% if loop.first %}checked{% endif %}>
+          <span>{{ iconos_exp[clave] }} {{ nombre }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <div class="rejilla-campos">
+      <div class="grupo">
+        <label for="modo" class="etiqueta">Detección del objeto</label>
+        <select id="modo" class="campo">
+          <option value="auto">Automática (objeto en movimiento)</option>
+          {% for c in colores %}
+          <option value="{{ c }}">Por color: {{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="grupo">
+        <label for="altoEscena" class="etiqueta">Alto real visible (m)</label>
+        <input type="number" id="altoEscena" class="campo" value="2" min="0.05" step="0.05" inputmode="decimal">
+      </div>
+      <div class="grupo" id="grupoLongitud" hidden>
+        <label for="longitud" class="etiqueta">Longitud del hilo (m) <small>opcional</small></label>
+        <input type="number" id="longitud" class="campo" min="0.05" step="0.01" inputmode="decimal" placeholder="Ej.: 0.80">
+      </div>
+    </div>
+
+    <details class="avanzado">
+      <summary>Opciones avanzadas</summary>
+      <div class="grupo">
+        <label for="fps" class="etiqueta">FPS reales del video <small>opcional, útil para cámara lenta</small></label>
+        <input type="number" id="fps" class="campo" min="1" max="1000" step="1" inputmode="numeric" placeholder="Se detectan automáticamente">
+      </div>
+    </details>
+
+    <p class="ayuda">El <b>alto real visible</b> es la altura de la escena que abarca el encuadre en metros. Con ella se convierten píxeles a metros.</p>
+
+    <button type="submit" id="btnProcesar" class="btn-oro ripple" disabled>
+      <span>Analizar con OpenCV</span>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 H19"/><path d="M13 6 L19 12 L13 18"/></svg>
+    </button>
+
+    <div id="estadoProceso" class="estado-proceso" hidden>
+      <div class="progreso"><i></i></div>
+      <p id="mensajeProceso">Subiendo video…</p>
+    </div>
+  </form>
+</section>
+
+<div id="resultados" hidden>
+  <section class="panel glass">
+    <div class="panel-cabeza">
+      <span class="insignia">2</span>
+      <div>
+        <h2>Trayectoria rastreada</h2>
+        <p>Reproduce el video: los contadores siguen al objeto en tiempo real.</p>
+      </div>
+    </div>
+    <div class="visor">
+      <video id="videoSalida" controls playsinline preload="metadata"></video>
+      <div class="contadores" aria-live="off">
+        <div><span>t</span><b id="cT">—</b><small>s</small></div>
+        <div><span>x</span><b id="cX">—</b><small>m</small></div>
+        <div><span>h</span><b id="cH">—</b><small>m</small></div>
+        <div><span>v</span><b id="cV">—</b><small>m/s</small></div>
+      </div>
+    </div>
+    <p id="avisoVideo" class="alerta suave" hidden>Tu navegador podría no reproducir este video. Descárgalo para verlo en tu reproductor.</p>
+    <a id="enlaceVideo" class="enlace" download>Descargar video con la trayectoria</a>
+  </section>
+
+  <section class="panel glass">
+    <div class="panel-cabeza">
+      <span class="insignia">3</span>
+      <div>
+        <h2>Métricas del análisis</h2>
+        <p>Calculadas a partir de los datos reales extraídos del video.</p>
+      </div>
+    </div>
+    <div id="metricas" class="metricas"></div>
+  </section>
+
+  <section class="panel glass">
+    <div class="panel-cabeza">
+      <span class="insignia">4</span>
+      <div>
+        <h2>Realidad vs. teoría</h2>
+        <p>Curva teórica perfecta frente a los datos reales de OpenCV.</p>
+      </div>
+    </div>
+    <div id="pestanas" class="pestanas" role="tablist"></div>
+    <div class="marco-grafica">
+      <canvas id="grafica"></canvas>
+    </div>
+    <p class="ayuda">Toca o desliza sobre la gráfica para ver los valores. La zona sombreada es la desviación o pérdida energética.</p>
+  </section>
+
+  <section class="panel glass">
+    <div class="panel-cabeza">
+      <span class="insignia">5</span>
+      <div>
+        <h2>Auditor de errores</h2>
+        <p>Informe científico de Gemini sobre las causas de la diferencia.</p>
+      </div>
+    </div>
+    <button type="button" id="btnAuditar" class="btn-oro ripple">
+      <span>Generar informe del auditor</span>
+    </button>
+    <div id="auditoria" class="prosa auditoria" hidden></div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tracker.js') }}"></script>
+{% endblock %}

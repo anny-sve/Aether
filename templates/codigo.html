@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titulo %}Aether · Código Python{% endblock %}
+{% block contenido %}
+<section class="hero hero-chico reveal">
+  <p class="sobretitulo">Python</p>
+  <h1 class="titulo-pagina">Código de la <em>gráfica</em></h1>
+  <p class="meta">Copia y pega en un archivo llamado aether_grafica.py y ejecútalo con Python.</p>
+</section>
+
+<section class="panel glass reveal">
+  <div class="panel-cabeza">
+    <h2>Instalación y uso</h2>
+    <p>Una sola vez: <code>pip install numpy matplotlib opencv-python</code></p>
+  </div>
+  <ul class="uso-codigo">
+    <li><code>python aether_grafica.py</code> muestra un ejemplo simulado.</li>
+    <li><code>python aether_grafica.py --experimento pendulo</code> o <code>parabolico</code> cambia el ejemplo.</li>
+    <li><code>python aether_grafica.py video.mp4 --experimento caida --color rojo --alto 2.0</code> usa tu video.</li>
+  </ul>
+</section>
+
+<div class="acciones">
+  <button type="button" id="copiarCodigo" class="btn-oro ripple">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15 V6 a2 2 0 0 1 2 -2 H15"/></svg>
+    <span id="textoCopiar">Copiar código</span>
+  </button>
+  <a href="{{ url_for('codigo_descargar') }}" class="btn-cristal ripple">Descargar .py</a>
+</div>
+
+<section class="bloque-codigo glass reveal">
+  <header><span>aether_grafica.py</span><small>{{ lineas }} líneas</small></header>
+  <pre><code id="codigoFuente">{{ codigo }}</code></pre>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var boton = document.getElementById("copiarCodigo");
+  var texto = document.getElementById("textoCopiar");
+  var fuente = document.getElementById("codigoFuente");
+  function avisar(mensaje) {
+    texto.textContent = mensaje;
+    setTimeout(function () { texto.textContent = "Copiar código"; }, 2200);
+  }
+  function copiarAlternativo() {
+    var rango = document.createRange();
+    rango.selectNodeContents(fuente);
+    var seleccion = window.getSelection();
+    seleccion.removeAllRanges();
+    seleccion.addRange(rango);
+    var correcto = false;
+    try { correcto = document.execCommand("copy"); } catch (e) {}
+    seleccion.removeAllRanges();
+    avisar(correcto ? "¡Copiado!" : "Selecciona y copia manualmente");
+  }
+  boton.addEventListener("click", function () {
+    var contenido = fuente.textContent;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(contenido).then(function () { avisar("¡Copiado!"); }, copiarAlternativo);
+    } else {
+      copiarAlternativo();
+    }
+  });
+})();
+</script>
+{% endblock %}

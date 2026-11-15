@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block titulo %}Aether · Resolver física{% endblock %}
+{% block contenido %}
+<section class="hero reveal">
+  <div class="flotantes" aria-hidden="true">
+    <span style="--x:6%;--y:18%;--d:0s">F = m·a</span>
+    <span style="--x:70%;--y:6%;--d:1.4s">E = ½mv² + mgh</span>
+    <span style="--x:78%;--y:68%;--d:2.6s">x(t) = x₀ + v₀t + ½at²</span>
+    <span style="--x:2%;--y:78%;--d:3.8s">W = ΔE<sub>c</sub></span>
+  </div>
+  <p class="sobretitulo">Plataforma de física avanzada</p>
+  <h1 class="titulo-aether">Aether</h1>
+  <p class="subtitulo-hero">Resuelve, visualiza y audita la física del mundo real.</p>
+  <canvas class="onda-hero" data-onda aria-hidden="true"></canvas>
+</section>
+
+<section class="panel glass reveal" data-tilt>
+  <div class="panel-cabeza">
+    <span class="insignia">A</span>
+    <div>
+      <h2>Tutor de física con IA</h2>
+      <p>Describe el problema o fotografíalo. Recibirás la solución estructurada y un reporte en PDF.</p>
+    </div>
+  </div>
+
+  <form id="formProblema" action="{{ url_for('resolver') }}" method="post" enctype="multipart/form-data" data-cargando="Analizando tu problema…|Identificando datos e incógnitas…|Aplicando principios físicos…|Redactando el procedimiento…">
+    {% if error %}
+    <div class="alerta" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <fieldset class="grupo">
+      <legend>Categoría</legend>
+      <div class="chips">
+        {% for c in categorias %}
+        <label class="chip">
+          <input type="radio" name="categoria" value="{{ c }}" {% if (valores.categoria or categorias[0]) == c %}checked{% endif %}>
+          <span>{{ iconos[c] }} {{ c }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <div class="grupo">
+      <label for="enunciado" class="etiqueta">Enunciado</label>
+      <textarea id="enunciado" name="enunciado" rows="6" class="campo" placeholder="Ej.: Un bloque de 5 kg se desliza por un plano inclinado de 30° con coeficiente de rozamiento cinético 0.2. Calcula su aceleración.">{{ valores.enunciado or '' }}</textarea>
+    </div>
+
+    <div class="grupo">
+      <span class="etiqueta">Imagen del problema <small>(opcional)</small></span>
+      <label class="zona-imagen" for="imagen" id="zonaImagen">
+        <input type="file" id="imagen" name="imagen" accept="image/*">
+        <div class="zona-vacia" id="zonaVacia">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16 L15 10 L5 20"/></svg>
+          <b>Toca para tomar o adjuntar una foto</b>
+          <small>JPG, PNG o WEBP · hasta 15 MB</small>
+        </div>
+        <div class="zona-previa" id="zonaPrevia" hidden>
+          <img id="imagenPrevia" alt="Vista previa del problema">
+          <div>
+            <b id="nombreImagen"></b>
+            <button type="button" id="quitarImagen" class="enlace">Quitar imagen</button>
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <button type="submit" class="btn-oro ripple">
+      <span>Resolver con Aether</span>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12 H19"/><path d="M13 6 L19 12 L13 18"/></svg>
+    </button>
+  </form>
+</section>
+
+<a href="{{ url_for('tracker') }}" class="tarjeta-lab glass reveal" data-tilt>
+  <canvas data-onda data-onda-fuerte aria-hidden="true"></canvas>
+  <div class="tarjeta-texto">
+    <span class="sobretitulo">Módulo B</span>
+    <h2>Tracker-Vision &amp; Error Auditor</h2>
+    <p>Graba un experimento real, rastrea el objeto con OpenCV y compara la realidad con la curva teórica.</p>
+    <span class="enlace-flecha">Abrir laboratorio →</span>
+  </div>
+</a>
+
+<section class="rejilla-info reveal">
+  <div class="dato glass"><b>4</b><span>secciones rigurosas por solución</span></div>
+  <div class="dato glass"><b>SI</b><span>resultados en unidades del Sistema Internacional</span></div>
+  <div class="dato glass"><b>PDF</b><span>reporte formal descargable</span></div>
+</section>
+{% endblock %}
